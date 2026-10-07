@@ -1,0 +1,47 @@
+---
+type: project
+project_id: "PROJECT_ID"
+status: "PROJECT_STATUS"
+created: PROJECT_CREATED
+domain: PROJECT_CATEGORY_YAML
+vault_name: PROJECT_NAME_YAML
+tags: [科研项目]
+---
+# PROJECT_NAME
+
+PROJECT_INTRO
+
+[在项目子库中打开](PROJECT_OPEN_URI) · [共享知识](SHARED_KNOWLEDGE_URI) · [主库工作台](MAIN_HOME_URI)
+
+## 研究问题与目标
+- 核心问题：
+- 假设与预期贡献：
+- 基线与成功标准：
+
+## 外部实验物料
+- 代码仓库与提交版本：
+- 数据位置、版本及患者/受试者级划分：
+- 配置、权重与完整训练日志位置：
+
+## 当前进展
+- 当前阶段：
+- 下一步：
+- 阻碍与待核实事项：
+
+## 文献
+![[PROJECT_ID-文献.base]]
+
+## 实验
+![[PROJECT_ID-实验.base]]
+
+## 结果
+![[PROJECT_ID-结果.base]]
+
+## 人工交接日志
+![[PROJECT_ID-交接.base]]
+
+## 工作方式
+本目录单独打开为 Obsidian Vault。主库保持打开以同步项目资产，子库禁止独立同步。
+从 `90 模板` 插入笔记，完成属性并存入相应目录；文件名加 `PROJECT_ID-` 前缀。
+共享知识只保存一份，访问主库使用 URI。项目内实验是普通记录/目录，不能继续嵌套 Vault。
+详见本项目 `AGENTS.md` 与主库科研库规则。

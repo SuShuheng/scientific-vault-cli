@@ -1,0 +1,31 @@
+OPERATIONS = [
+    ('身份与权限', 'whoami / permissions / operations', '主库与子库', '自动识别当前工作目录与项目边界'),
+    ('笔记新增', 'note add', '主库与子库', '按模板生成属性；子库仅本项目'),
+    ('笔记删除', 'note delete', '主库与子库', '移入对应库 .trash；原件只读'),
+    ('笔记修改', 'note edit', '主库与子库', '属性更新或追加正文；替换须已有用户授权'),
+    ('笔记查询', 'note get / note find', '主库与子库', '返回正文、属性和 SHA256'),
+    ('笔记列出', 'note list', '主库与子库', '按类型或关键词筛选，跳过配置、模板和回收站'),
+    ('附件与文字资产', 'file add / file get / file edit / file delete / file list', '主库与子库', '不接收权重/原始训练数据；不会自动清理附件'),
+    ('普通目录', 'folder add / folder list / folder delete', '主库与子库', '本作用域普通目录；不自动改名或跨库搬迁'),
+    ('项目新建', 'project create', '仅主库', '完整目录模板、个人配置、Agent规则、索引与同步登记'),
+    ('项目查询', 'project list / project get', '主库与子库', '子库只返回自身'),
+    ('项目状态', 'project status', '主库与子库', '子库更新自身状态；归档采用 archived 状态'),
+    ('项目主页与进展', 'project edit', '主库与子库', '更新进展属性、追加证据；不改编号、注册名与分类'),
+    ('整个项目删除', 'project delete', '仅主库', '整个项目移入主库 .trash；不永久删除'),
+    ('恢复', 'trash list / trash get / trash restore', '主库与子库', '拒绝覆盖恢复位置；整个项目仅主库恢复'),
+    ('操作历史与回滚', 'history list / history get / history undo', '主库与子库', '回滚文件修改须当前内容未再改变'),
+    ('笔记模板查询与预览', 'template list / template get / template render', '主库与子库', '子库用自身模板'),
+    ('笔记模板维护', 'template add / template set / template delete', '仅主库', '可用 --project 维护指定项目模板；旧版本可恢复'),
+    ('目录模板查询与校验', 'blueprint show / blueprint validate', '主库与子库', '读取主库标准蓝图；不初始化真实项目'),
+    ('目录模板维护', 'blueprint set-file', '仅主库', '修改已有模板源或目录清单，校验失败自动回滚'),
+    ('Agent规则模板', 'agents template-get / agents template-set', '读取两级；修改仅主库', '主库模板和项目模板各有唯一来源'),
+    ('本库Agent规则', 'agents show / agents render / agents apply / agents customize', '主库与子库', '子库只能生成自身 AGENTS，保留本库补充文件'),
+    ('启动规则读取', 'rules', '主库与子库', '读取主库规则及当前子库规则'),
+    ('共享知识引用', 'shared list / shared find / shared get', '主库与子库', '子库只读；返回主库 URI'),
+    ('库检查', 'check', '主库与子库', '主库全库检查，子库仅自身检查'),
+    ('Bases索引', 'index list / index get / index set', '主库与子库', '只维护当前库索引，项目必须保留自身编号过滤'),
+    ('同步目录', 'sync show / sync rebuild / sync apply', '仅主库', '清单不含凭据；不输出插件连接配置'),
+]
+
+def operations():
+    return [{'object': obj, 'commands': commands, 'scope': scope, 'behavior': behavior} for obj, commands, scope, behavior in OPERATIONS]

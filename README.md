@@ -4,6 +4,10 @@
 
 面向主 Vault 与叶级项目 Vault 的科研笔记管理 CLI。提供作用域校验、可恢复删除、文件旧版本、模板和 Agent 规则生成、项目结构维护及审计记录。工具不调用 AI，不运行训练，不连接外部实验仓库。
 
+## Agent Skill
+
+标准 skill 位于 [skills/svault-cli](skills/svault-cli/SKILL.md)，介绍 CLI 的作用域、维护命令、恢复与升级。将整个 svault-cli 目录安装到 ~/.agents/skills/svault-cli 后，可通过 $svault-cli 调用。
+
 ## 运行
 
 Windows 原生版本为 `dist/svault.exe`，不需要另装 Python。安装到笔记库 `工具/svault.exe` 后，从主库执行：

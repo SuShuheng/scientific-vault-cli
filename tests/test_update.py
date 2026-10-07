@@ -99,6 +99,12 @@ class UpdateTests(unittest.TestCase):
                 run(['update', 'apply'])
 
     def test_real_windows_helper_replaces_verified_native_exe(self):
+        self.native_helper_success(simulate_frozen=False)
+
+    def test_helper_resets_inherited_frozen_parent_environment(self):
+        self.native_helper_success(simulate_frozen=True)
+
+    def native_helper_success(self, simulate_frozen):
         native = os.environ.get('SVAULT_EXE')
         if not native:
             self.skipTest('须构建 exe 后设置 SVAULT_EXE')
@@ -119,7 +125,12 @@ info={'version':'1.0.0','repository':updater.REPOSITORY,'sha256':hashlib.sha256(
 result=updater.prepare_update(Path(sys.argv[3]),info,Client(),force=True)
 print(json.dumps(result))
 ''', encoding='utf-8')
-            process = subprocess.run([sys.executable, str(driver), str(REPO / 'src'), native, str(target)], capture_output=True, encoding='utf-8', timeout=30)
+            env = dict(os.environ)
+            if simulate_frozen:
+                env['_PYI_ARCHIVE_FILE'] = str(target)
+                env['_PYI_APPLICATION_HOME_DIR'] = str(base / 'already-removed-unpack-directory')
+                env['_PYI_PARENT_PROCESS_LEVEL'] = '2'
+            process = subprocess.run([sys.executable, str(driver), str(REPO / 'src'), native, str(target)], capture_output=True, encoding='utf-8', timeout=30, env=env)
             self.assertEqual(process.returncode, 0, process.stderr)
             deadline = time.monotonic() + 30
             result = {'status': 'pending'}

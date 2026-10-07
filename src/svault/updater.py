@@ -199,7 +199,10 @@ def prepare_update(target, info, client=None, force=False, parent_pid=None):
     json_write(work / 'config.json', config)
     json_write(status_path, {'status': 'pending', 'version': info['version'], 'created': stamp(), 'target': str(target), 'backup': str(backup)})
     try:
-        process = subprocess.Popen(['powershell.exe', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', str(script), '-Config', str(work / 'config.json')], cwd=work, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        helper_env = dict(os.environ)
+        # The helper outlives the frozen parent; its probe must unpack a fresh app.
+        helper_env['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
+        process = subprocess.Popen(['powershell.exe', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', str(script), '-Config', str(work / 'config.json')], cwd=work, env=helper_env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
     except Exception:
         source.unlink(missing_ok=True)
         json_write(status_path, {'status': 'failed', 'message': '无法启动覆盖升级辅助进程，原程序未修改'})

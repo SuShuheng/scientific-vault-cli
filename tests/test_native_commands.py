@@ -27,7 +27,7 @@ class NativeCommands(unittest.TestCase):
         return str(path)
 
     def test_identity_rules_reading_and_permission_denial(self):
-        self.assertEqual(self.call('version')['version'], '1.0.0')
+        self.assertEqual(self.call('version')['version'], '1.1.0')
         self.assertEqual(self.call('whoami')['role'], 'main')
         self.assertEqual(self.call('whoami', child=True)['role'], 'project')
         self.assertTrue(self.call('operations')['operations'])

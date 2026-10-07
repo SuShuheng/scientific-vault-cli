@@ -1,4 +1,4 @@
-# scientific-vault-cli / svault 1.0.0
+# scientific-vault-cli / svault 1.1.0
 
 [GitHub](https://github.com/SuShuheng/scientific-vault-cli) · [Releases](https://github.com/SuShuheng/scientific-vault-cli/releases)
 
@@ -8,7 +8,51 @@
 
 标准 skill 位于 [skills/svault-cli](skills/svault-cli/SKILL.md)，介绍 CLI 的作用域、维护命令、恢复与升级。将整个 svault-cli 目录安装到 ~/.agents/skills/svault-cli 后，可通过 $svault-cli 调用。
 
-## 运行
+## 从零创建完整科研库（1.1.0）
+
+只需 exe，无旧库、无 Python、无网络即可初始化。目标必须不存在或完全为空；初始化不会创建示例研究记录。
+
+```text
+svault init "D:/科研笔记" --kind main --dry-run
+svault init "D:/科研笔记" --kind main
+svault init "D:/科研笔记/科研项目/医学影像/P001-分割" --kind project --parent "D:/科研笔记" --id P001
+svault blueprint list
+svault blueprint generate --kind main --output "D:/主库目录蓝图" --dry-run
+svault blueprint generate --kind project --output "D:/项目目录蓝图"
+```
+
+主库生成稳定身份 `vault.json`、核心 Obsidian 配置、工作台、共享知识、规则与模板、Bases、项目分类及同一 exe。项目仍用 `项目.json`，记录父库身份与结构版本。URI 使用实际主库注册名，不再要求所有主库都叫 scientific_notes。
+blueprint generate 输出目录/文件模板与清单，不含有效 `.obsidian` 或项目主页，不作为 Vault 打开。
+
+参考本地 Vault 时先列出可继承项，再明确选择：
+
+```text
+svault profile inspect "D:/旧笔记库"
+svault init "D:/新科研库" --from-vault "D:/旧笔记库" --include editor,hotkeys,appearance,plugins --plugin templater-obsidian --dry-run
+```
+
+不指定参考库时采用标准配置。editor 仅继承白名单偏好，目录设置重新生成；appearance 继承所用主题/CSS 资源；hotkeys 继承快捷键；plugins 只复制显式选择的程序/静态资源。所有插件 data.json、密钥、布局、缓存和同步索引不继承，插件设置需要重新配置。
+离线建项目不会因没有同步授权而失败；安装并授权主库同步后再执行 sync apply。
+
+## 旧库登记、诊断和补缺
+
+```text
+svault vault get
+svault vault list
+svault vault register "D:/既有科研库" --dry-run
+svault vault register "D:/既有科研库"
+svault doctor
+svault repair
+svault repair --apply --if-plan-hash <预览返回的plan_hash>
+svault agents diff
+svault agents sync --if-hash <当前AGENTS哈希>
+```
+
+1.0.0 库仍可直接识别，不在 exe 升级时自动重建。登记只补身份，不搬迁或猜测冲突编号。
+doctor 只读返回原因、位置、严重程度与可修复性；repair 默认预览，只补缺失的标准目录、模板、说明、索引和派生清单，不替换已有笔记、规则、主题或插件配置。目标变化使 plan_hash 不同，应用拒绝覆盖。
+子库只诊断、补缺自身；不能初始化新主库、登记其他库或修改共享模板。规则 diff/sync 仅当前指定库，保留 AGENTS.local.md 并维护旧版本。
+
+## 运行已有科研库
 
 Windows 原生版本为 `dist/svault.exe`，不需要另装 Python。安装到笔记库 `工具/svault.exe` 后，从主库执行：
 
@@ -120,7 +164,7 @@ svault sync apply
 
 ```text
 python -m unittest discover -s tests -v
-python -m PyInstaller --onefile --name svault --version-file version_info.txt --paths src run_svault.py
+python -m PyInstaller --onefile --name svault --version-file version_info.txt --add-data "src/svault/assets;svault/assets" --paths src run_svault.py
 ```
 
 源码、测试及构建文件归独立仓库管理；笔记库中的运行时副本是安装产物。发布前验证 Windows 可执行文件的权限拒绝与 JSON 输出。输出默认 UTF-8 JSON，成功 exit=0，操作错误 exit=1，检查发现问题 exit=2。

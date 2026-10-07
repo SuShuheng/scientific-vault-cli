@@ -7,6 +7,7 @@ import json
 import re
 import yaml
 from .blueprint import discover_vaults, load, SYNC_LIST, validate_blueprint, ID_RE
+from .identity import main_name, main_identity
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -17,7 +18,7 @@ def check(root):
     configurations = 0
     known_ids, names, metadata_by_vault = {}, {}, {}
     for vault in projects:
-        if vault.name.casefold() == 'scientific_notes':
+        if vault.name.casefold() == main_name(root).casefold():
             errors.append('子库名称与主库注册名冲突: ' + str(vault.relative_to(root)))
         for parent in projects:
             if parent != vault and vault.is_relative_to(parent):
@@ -42,6 +43,8 @@ def check(root):
             continue
         if identity and identity.get('project_id') != project_id:
             errors.append('项目元数据与主页编号不一致: ' + str(vault.relative_to(root)))
+        if identity.get('parent_vault_id') and identity['parent_vault_id'] != main_identity(root)['vault_id']:
+            errors.append('项目父库身份不一致: ' + str(vault.relative_to(root)))
         if data.get('vault_name') != vault.name:
             errors.append('子库注册名与目录名不一致: ' + str(vault.relative_to(root)))
         if project_id.casefold() in known_ids:
@@ -73,8 +76,7 @@ def check(root):
             sync = load(config_dir / 'plugins/fast-note-sync/data.json', {})
             if vault != root and ('fast-note-sync' in enabled or sync.get('syncEnabled') or sync.get('apiToken')):
                 errors.append('子库启用独立同步或保存主库同步凭据: ' + str(vault.relative_to(root)))
-            if vault == root and ('fast-note-sync' not in enabled or not sync.get('syncEnabled') or not sync.get('configSyncEnabled')):
-                warnings.append('主库同步未启用或配置同步未启用')
+            # Offline vaults are valid; sync state is informational in doctor.
         except (ValueError, TypeError):
             errors.append('插件启用列表或同步配置格式无效: ' + str(vault.relative_to(root)))
 
@@ -124,7 +126,7 @@ def check(root):
         for address in re.findall(r'\]\((obsidian://[^)]+)\)', content):
             query = parse_qs(urlparse(address).query)
             vault_name = query.get('vault', [''])[0]
-            destination = root if vault_name == 'scientific_notes' else names.get(vault_name.casefold())
+            destination = root if vault_name == main_name(root) else names.get(vault_name.casefold())
             target = query.get('file', [''])[0]
             if destination is None or not target:
                 warnings.append('无法核实 URI 目标: ' + str(p.relative_to(root)))
@@ -140,7 +142,7 @@ def check(root):
         applied = {d['pattern'] for d in local}
         if recorded != expected:
             errors.append('共享子库同步目录清单与实际项目不一致')
-        if not expected.issubset(applied):
+        if settings.get('syncEnabled') and settings.get('configSyncEnabled') and not expected.issubset(applied):
             errors.append('本机同步目录遗漏子库配置')
         validate_blueprint(root)
     except (ValueError, KeyError, TypeError):

@@ -1,5 +1,11 @@
 OPERATIONS = [
-    ('版本查询', 'version / --version', '任意目录', '报告产品与 1.0.0 版本，无需找到 Vault'),
+    ('从零初始化', 'init --kind main/project [--dry-run]', '主库或库外用户', '空目标、离线完整生成；子库不得建新库'),
+    ('配置选择与继承', 'profile inspect / init --from-vault --include --plugin', '主库或库外用户', '只继承选中类别和插件程序，不复制插件 data.json'),
+    ('库身份与旧版登记', 'vault get/list/register [--dry-run]', '查询两级；登记仅主库', '稳定 UUID、注册名与结构版本，保留原内容'),
+    ('结构诊断与补缺', 'doctor / repair [--apply --if-plan-hash]', '主库全库，子库自身', '默认只读预览，不替换已有笔记、规则、主题和设置'),
+    ('完整蓝图生成', 'blueprint list/generate [--dry-run]', '主库或库外用户', '内置主库及项目模板，输出非有效 Vault'),
+    ('规则差异与同步', 'agents diff/sync --if-hash', '主库与子库自身', '保留补充，核对差异后应用，旧版本可回滚'),
+    ('版本查询', 'version / --version', '任意目录', '报告产品与当前版本，无需找到 Vault'),
     ('Release 升级查询', 'update check / update status', '主库与子库或任意目录', '访问公开 GitHub Release 或查询本机替换结果'),
     ('覆盖式升级 exe', 'update apply', '主库或库外独立安装', '校验 SHA256 和产品版本，退出后替换，旧版可恢复；子库禁止执行'),
     ('身份与权限', 'whoami / permissions / operations', '主库与子库', '自动识别当前工作目录与项目边界'),

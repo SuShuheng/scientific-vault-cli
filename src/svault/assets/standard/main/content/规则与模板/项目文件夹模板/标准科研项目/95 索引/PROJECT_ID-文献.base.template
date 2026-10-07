@@ -1,0 +1,12 @@
+filters:
+  and:
+    - 'file.ext == "md"'
+    - 'note.type == "literature"'
+    - '!file.inFolder("规则与模板")'
+    - '!file.inFolder("90 模板")'
+    - '!file.path.contains("/90 模板/")'
+    - 'note.project_id == "PROJECT_ID"'
+views:
+  - type: table
+    name: 文献
+    order: [file.name, note.status, note.citekey, note.year, note.project_id]

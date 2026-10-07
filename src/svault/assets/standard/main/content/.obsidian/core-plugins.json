@@ -1,0 +1,10 @@
+{
+  "file-explorer": true,
+  "global-search": true,
+  "backlink": true,
+  "properties": true,
+  "templates": true,
+  "daily-notes": true,
+  "bases": true,
+  "sync": false
+}

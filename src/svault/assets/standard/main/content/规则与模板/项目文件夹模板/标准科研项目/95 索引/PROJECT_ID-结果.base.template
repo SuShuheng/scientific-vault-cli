@@ -1,0 +1,12 @@
+filters:
+  and:
+    - 'file.ext == "md"'
+    - 'note.type == "result"'
+    - '!file.inFolder("规则与模板")'
+    - '!file.inFolder("90 模板")'
+    - '!file.path.contains("/90 模板/")'
+    - 'note.project_id == "PROJECT_ID"'
+views:
+  - type: table
+    name: 结果
+    order: [file.name, note.status, note.run_id, note.metric, note.value, note.project_id]

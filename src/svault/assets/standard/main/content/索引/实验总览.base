@@ -1,0 +1,17 @@
+filters:
+  and:
+    - file.ext == "md"
+    - note.type == "experiment"
+    - '!file.inFolder("规则与模板")'
+    - '!file.inFolder("90 模板")'
+    - '!file.path.contains("/90 模板/")'
+views:
+  - type: table
+    name: 记录
+    order:
+      - file.name
+      - project_id
+      - run_id
+      - status
+      - code_commit
+      - dataset_version

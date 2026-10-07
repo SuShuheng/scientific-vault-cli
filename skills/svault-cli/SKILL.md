@@ -1,6 +1,6 @@
 ---
 name: svault-cli
-description: 使用 svault CLI 管理两级 Obsidian 科研 Vault，包括笔记增删改查列、项目与模板维护、AGENTS 生成、回收恢复、索引与同步目录、版本查询和 GitHub Release 升级。适用于 svault 或对应科研库维护请求；不负责运行实验、管理训练物料或开发实验交接服务。
+description: 使用 svault CLI 从零初始化和维护两级 Obsidian 科研 Vault，包括配置选择继承、完整目录蓝图、诊断补缺、身份登记、笔记增删改查列、AGENTS 差异与生成、恢复和 Release 升级。不负责运行实验、管理训练物料或开发实验交接服务。
 ---
 
 # svault CLI
@@ -12,7 +12,7 @@ description: 使用 svault CLI 管理两级 Obsidian 科研 Vault，包括笔记
 - 优先使用已安装的 `svault` 命令；Windows Vault 通常部署于主库 `工具/svault.exe`。
 - 从当前目录向上查找主库标识（`.obsidian` 与 `规则与模板/科研库规则.md`）或按项目 AGENTS 的相对路径定位 exe。调用时保持工作目录在当前 Agent 的 Vault，不为获取主库权限切换目录。
 - 若程序缺失，先报告并给出[官方 Release](https://github.com/SuShuheng/scientific-vault-cli/releases)入口；没有安装/升级请求时，不自动下载或替换程序。
-- 先查询 `version`、`whoami`、`rules`；遇到不熟悉的操作，查询 `operations`、`permissions` 和对应命令的 `--help`。本 skill 的命令示例以 1.0.0 为基准，实际程序帮助优先。
+- 先查询 `version`；已有库再查询 `whoami`、`rules`，空目录初始化不要求已有上下文。遇到不熟悉的操作，查询 `operations`、`permissions` 和对应命令的 `--help`。本 skill 的命令示例以 1.1.0 为基准，实际程序帮助优先。
 - 普通操作使用选定库内的相对路径；全局参数 `--vault`、`--project` 放在子命令之前。库外人工运行才需要显式 `--vault`。
 
 ## 两级分工
@@ -27,9 +27,13 @@ CLI 的上下文检查是命令层约束，不是操作系统隔离或身份认�
 
 ## 按任务执行
 
+- 从零建库：先 init --dry-run，核对空目标和生成清单，再初始化；默认标准配置、离线运行、无示例研究记录。项目 init 必须位于父库科研项目目录内，子库不能再嵌套。
+- 配置继承：先 profile inspect，再让用户明确选择 --include 和 --plugin；不复制插件 data.json、凭据、布局或缓存，不自动把源库内容混入新库。
+- 旧库维护：先 vault register --dry-run 或 doctor；repair 默认预览，用 --apply --if-plan-hash 应用。已有文件损坏只报告，不以补缺名义替换；目标变化则重新比较计划，不盲目更新哈希。
+
 - 笔记与资产：使用 `note`、`file`、`folder`；新增优先选现有模板，填写实际项目/运行编号，未知证据标记待核实。
 - 项目与配置：主库使用 `project create/delete`、`template`、`blueprint` 和 `sync`；主页进展/状态与索引在当前项目范围内更新。
-- Agent 规则：先 `agents show/render`，再应用；主库维护共享模板，本库补充用 `agents customize`，保存在 `AGENTS.local.md`，不能放宽主规则。
+- Agent 规则：先 `agents show/render/diff`，再 apply 或 sync；主库维护共享模板，本库补充用 `agents customize`，保存在 `AGENTS.local.md`，不能放宽主规则。
 - 删除、恢复与回滚：用 `trash`、`history`，保留返回的操作编号。删除默认进入当前库 `.trash`，不手改恢复记录。
 - 版本升级：用户已要求升级时才执行 `update apply`；主库或库外独立安装执行，项目 Agent 只能查询。
 

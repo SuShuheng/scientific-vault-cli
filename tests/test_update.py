@@ -26,8 +26,8 @@ class MemoryClient:
 
 def release(digest=True):
     content = b'MZ' + b'test' * 30
-    prefix = 'https://github.com/SuShuheng/scientific-vault-cli/releases/download/v1.0.0/'
-    entry = {'tag_name': 'v1.0.0', 'draft': False, 'prerelease': False, 'assets': [{'name': updater.ASSET, 'size': len(content), 'browser_download_url': prefix + updater.ASSET}]}
+    prefix = 'https://github.com/SuShuheng/scientific-vault-cli/releases/download/v1.1.0/'
+    entry = {'tag_name': 'v1.1.0', 'draft': False, 'prerelease': False, 'assets': [{'name': updater.ASSET, 'size': len(content), 'browser_download_url': prefix + updater.ASSET}]}
     sha = hashlib.sha256(content).hexdigest()
     if digest:
         entry['assets'][0]['digest'] = 'sha256:' + sha
@@ -38,12 +38,12 @@ def release(digest=True):
 
 class UpdateTests(unittest.TestCase):
     def test_version_works_without_vault(self):
-        self.assertEqual(run(['version'], cwd=tempfile.gettempdir())['version'], '1.0.0')
+        self.assertEqual(run(['version'], cwd=tempfile.gettempdir())['version'], '1.1.0')
 
     def test_latest_metadata_and_digest(self):
         _, data = release()
         info = updater.release_info(client=MemoryClient(data))
-        self.assertEqual(info['version'], '1.0.0')
+        self.assertEqual(info['version'], '1.1.0')
         self.assertEqual(len(info['sha256']), 64)
 
     def test_checksum_fallback(self):
@@ -65,7 +65,7 @@ class UpdateTests(unittest.TestCase):
                 updater.release_info(client=MemoryClient(data))
 
     def test_bad_semver_and_unsafe_redirect(self):
-        for value in ('v1.0.0;script', '../v1.0.0', '1.0', '01.0.0', 'v1.0.0-beta'):
+        for value in ('v1.1.0;script', '../v1.1.0', '1.0', '01.1.0', 'v1.1.0-beta'):
             with self.assertRaises(VaultError):
                 updater.semver(value)
         for url in ('http://github.com/file', 'https://evil.example/file', 'https://user:pass@github.com/file'):
@@ -121,7 +121,7 @@ from svault import updater
 binary=Path(sys.argv[2]).read_bytes()
 class Client:
     def get(self,url,limit): return binary
-info={'version':'1.0.0','repository':updater.REPOSITORY,'sha256':hashlib.sha256(binary).hexdigest(),'size':len(binary),'url':'https://github.com/SuShuheng/scientific-vault-cli/releases/download/v1.0.0/svault-windows-x64.exe'}
+info={'version':'1.1.0','repository':updater.REPOSITORY,'sha256':hashlib.sha256(binary).hexdigest(),'size':len(binary),'url':'https://github.com/SuShuheng/scientific-vault-cli/releases/download/v1.1.0/svault-windows-x64.exe'}
 result=updater.prepare_update(Path(sys.argv[3]),info,Client(),force=True)
 print(json.dumps(result))
 ''', encoding='utf-8')
@@ -167,8 +167,8 @@ from svault import updater
 binary=Path(sys.argv[2]).read_bytes()
 class Client:
     def get(self,url,limit): return binary
-info={'version':'1.0.1','repository':updater.REPOSITORY,'sha256':hashlib.sha256(binary).hexdigest(),'size':len(binary),'url':'https://github.com/SuShuheng/scientific-vault-cli/releases/download/v1.0.1/svault-windows-x64.exe'}
-probe=SimpleNamespace(returncode=0,stdout=json.dumps({'ok':True,'result':{'product':'scientific-vault-cli','version':'1.0.1'}}))
+info={'version':'1.1.1','repository':updater.REPOSITORY,'sha256':hashlib.sha256(binary).hexdigest(),'size':len(binary),'url':'https://github.com/SuShuheng/scientific-vault-cli/releases/download/v1.1.1/svault-windows-x64.exe'}
+probe=SimpleNamespace(returncode=0,stdout=json.dumps({'ok':True,'result':{'product':'scientific-vault-cli','version':'1.1.1'}}))
 with patch.object(updater.subprocess,'run',return_value=probe):
     print(json.dumps(updater.prepare_update(Path(sys.argv[3]),info,Client())))
 ''', encoding='utf-8')

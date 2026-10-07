@@ -1,4 +1,37 @@
-# svault 1.0.0 命令参考
+# svault 1.1.0 命令参考
+
+## 从零初始化、蓝图与个人配置
+
+```powershell
+& $svault init "D:/科研库" --kind main --dry-run
+& $svault init "D:/科研库" --kind main
+& $svault profile inspect "D:/参考笔记库"
+& $svault init "D:/新科研库" --from-vault "D:/参考笔记库" --include editor,hotkeys,appearance,plugins --plugin templater-obsidian --dry-run
+& $svault init "D:/科研库/科研项目/医学影像/P001-项目" --kind project --parent "D:/科研库" --id P001 --dry-run
+& $svault blueprint list
+& $svault blueprint generate --kind main --output "D:/主库蓝图" --dry-run
+& $svault blueprint generate --kind project --output "D:/项目蓝图"
+```
+
+目标必须不存在或完全为空；不提供强制覆盖。主库生成标准目录、核心配置、身份、规则、模板、索引及 exe；无网络/旧库也可完成。项目 init 与 project create 共用引擎，主库必须已存在，项目保持叶级。
+配置类别为 editor/hotkeys/appearance/plugins。插件需要重复 --plugin 显式选择；只复制程序与静态资源，data.json、凭据、设备布局和索引不继承。dry-run 中 errors 非空时不执行；联接、缺失或不完整资源阻止选定继承。
+blueprint generate 输出结构模板而非 Vault，不打开为 Obsidian 仓库。现有库不重新 init。
+
+## 旧库登记与保守修复
+
+```powershell
+& $svault vault get
+& $svault vault list
+& $svault vault register "当前主库或项目路径" --dry-run
+& $svault doctor
+$plan = (& $svault repair | ConvertFrom-Json)
+& $svault repair --apply --if-plan-hash $plan.result.plan_hash
+& $svault agents diff
+& $svault agents sync --if-hash "当前AGENTS哈希"
+```
+
+register 仅主库，身份不唯一时拒绝猜测。vault.json 记录主库身份/注册名/结构版本，项目沿用项目.json，并可补父库身份；1.0.0 标识仍可兼容。
+doctor 默认只读，区分缺失与损坏。repair 只补缺失标准文件/目录、重建派生清单，已有文件损坏不替换；计划变化拒绝应用。子库仅自身范围，主库可指定项目。agents diff/sync 保留补充与旧版本，默认只处理当前库。
 
 ## 入口与输出
 

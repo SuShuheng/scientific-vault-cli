@@ -1,0 +1,14 @@
+{
+  "types": {
+    "type": "text",
+    "project_id": "text",
+    "status": "text",
+    "created": "date",
+    "received": "date",
+    "tags": "tags",
+    "run_id": "text",
+    "handoff_id": "text",
+    "value": "number",
+    "year": "number"
+  }
+}

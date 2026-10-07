@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "name": "标准科研项目",
+  "directories": [
+    "00 收件箱",
+    "01 文献",
+    "02 研究设计",
+    "03 实验记录",
+    "04 结果与图表",
+    "05 总结与写作",
+    "06 科研日志",
+    "07 会议与决策",
+    "08 交接记录/原始材料",
+    "80 附件",
+    "90 模板",
+    "95 索引",
+    "维护日志"
+  ],
+  "files": [
+    {
+      "source": "AGENTS.md.template",
+      "destination": "AGENTS.md"
+    },
+    {
+      "source": "PROJECT_ID-项目主页.md.template",
+      "destination": "PROJECT_ID-项目主页.md"
+    },
+    {
+      "source": "95 索引/PROJECT_ID-文献.base.template",
+      "destination": "95 索引/PROJECT_ID-文献.base"
+    },
+    {
+      "source": "95 索引/PROJECT_ID-实验.base.template",
+      "destination": "95 索引/PROJECT_ID-实验.base"
+    },
+    {
+      "source": "95 索引/PROJECT_ID-结果.base.template",
+      "destination": "95 索引/PROJECT_ID-结果.base"
+    },
+    {
+      "source": "95 索引/PROJECT_ID-交接.base.template",
+      "destination": "95 索引/PROJECT_ID-交接.base"
+    }
+  ],
+  "note_templates": "规则与模板/笔记模板",
+  "note_template_destination": "90 模板",
+  "generated": [
+    ".obsidian",
+    "项目.json"
+  ]
+}

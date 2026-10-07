@@ -11,6 +11,7 @@ from .context import Context, VaultError, identity, leaves, parts
 from .storage import Store, atomic, digest, json_write, stamp
 from . import blueprint
 from .project_config import configure_project
+from .identity import main_name
 
 MAIN_AGENT_TEMPLATE = Path('规则与模板/Agent模板/主库AGENTS.md.template')
 PROJECT_AGENT_TEMPLATE = blueprint.TEMPLATE / 'AGENTS.md.template'
@@ -301,7 +302,9 @@ class Service:
         data = {'schema_version': 1, 'directories': blueprint.sync_patterns(self.ctx.root)}
         blueprint.atomic_json(self.ctx.root / blueprint.SYNC_LIST, data)
         if apply:
-            blueprint.apply_sync_dirs(self.ctx.root)
+            settings = blueprint.load(self.ctx.root / '.obsidian/plugins/fast-note-sync/data.json', {})
+            if settings.get('syncEnabled') and settings.get('configSyncEnabled'):
+                blueprint.apply_sync_dirs(self.ctx.root)
         return data
 
     def sync_maintain(self, rebuild=False):
@@ -450,7 +453,7 @@ class Service:
                 raise VaultError('共享知识路径越界', 'permission_denied')
             if not target.is_file() or target.suffix != '.md':
                 raise VaultError('共享知识笔记不存在')
-            return {'path': path, 'content': target.read_text(encoding='utf-8-sig'), 'uri': 'obsidian://open?' + urlencode({'vault': 'scientific_notes', 'file': target.relative_to(self.ctx.root).as_posix().removesuffix('.md')})}
+            return {'path': path, 'content': target.read_text(encoding='utf-8-sig'), 'uri': 'obsidian://open?' + urlencode({'vault': main_name(self.ctx.root), 'file': target.relative_to(self.ctx.root).as_posix().removesuffix('.md')})}
         return [{'path': p.relative_to(scope).as_posix()} for p in visible_files(scope) if p.suffix == '.md' and (not query or query.casefold() in p.read_text(encoding='utf-8-sig').casefold())]
 
     def scoped_check(self):

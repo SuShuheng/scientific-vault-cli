@@ -1,0 +1,12 @@
+filters:
+  and:
+    - 'file.ext == "md"'
+    - 'note.type == "handoff"'
+    - '!file.inFolder("规则与模板")'
+    - '!file.inFolder("90 模板")'
+    - '!file.path.contains("/90 模板/")'
+    - 'note.project_id == "PROJECT_ID"'
+views:
+  - type: table
+    name: 交接
+    order: [file.name, note.status, note.handoff_id, note.run_id, note.received, note.project_id]

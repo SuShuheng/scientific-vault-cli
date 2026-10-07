@@ -1,0 +1,10 @@
+{
+  "useMarkdownLinks": false,
+  "alwaysUpdateLinks": true,
+  "promptDelete": true,
+  "trashOption": "local",
+  "newFileLocation": "folder",
+  "newFileFolderPath": "收件箱",
+  "attachmentFolderPath": "附件",
+  "showUnsupportedFiles": true
+}

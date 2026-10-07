@@ -14,7 +14,7 @@ def main_vault(path):
     if path.is_file():
         path = path.parent
     for parent in (path, *path.parents):
-        if (parent / '规则与模板/科研库规则.md').is_file() and (parent / '.obsidian').is_dir():
+        if (parent / 'vault.json').is_file() or ((parent / '规则与模板/科研库规则.md').is_file() and (parent / '.obsidian').is_dir()):
             return parent
     return None
 
@@ -113,7 +113,7 @@ class Context:
                 raise VaultError('不通过符号链接或目录联接操作文件', 'permission_denied')
             current = current.parent
         if mutate:
-            protected = path.name in {'AGENTS.md', 'AGENTS.local.md', '项目.json'} or path.name.endswith('-项目主页.md')
+            protected = path.name in {'AGENTS.md', 'AGENTS.local.md', '项目.json', 'vault.json'} or path.name.endswith('-项目主页.md')
             if protected and not managed:
                 raise VaultError('项目身份和 Agent 规则需使用专用命令', 'permission_denied')
             if '原始材料' in segments:

@@ -10,6 +10,7 @@ from .storage import locked, digest
 from .service import Service, render_core
 from .capabilities import operations
 from . import updater
+from . import bootstrap, maintenance, profiles
 
 READ_ONLY = {'whoami', 'permissions', 'operations', 'rules', 'check'}
 
@@ -42,6 +43,27 @@ def parser():
     def group(name, names):
         subs = commands.add_parser(name).add_subparsers(dest='action', required=True)
         return {n: subs.add_parser(n) for n in names}
+    init = commands.add_parser('init')
+    init.add_argument('path')
+    init.add_argument('--kind', choices=['main', 'project'], default='main')
+    init.add_argument('--parent')
+    init.add_argument('--id')
+    init.add_argument('--from-vault')
+    init.add_argument('--include')
+    init.add_argument('--plugin', action='append')
+    init.add_argument('--dry-run', action='store_true')
+    profile = group('profile', ['inspect'])
+    profile['inspect'].add_argument('path')
+    vault_commands = group('vault', ['get', 'list', 'register'])
+    vault_commands['get'].add_argument('path', nargs='?')
+    vault_commands['register'].add_argument('path')
+    vault_commands['register'].add_argument('--dry-run', action='store_true')
+    for name in ('doctor', 'repair'):
+        diag = commands.add_parser(name)
+        diag.add_argument('path', nargs='?')
+        if name == 'repair':
+            diag.add_argument('--apply', action='store_true')
+            diag.add_argument('--if-plan-hash')
     note = group('note', ['add', 'get', 'find', 'list', 'edit', 'delete'])
     for name in ('add', 'get', 'edit', 'delete'):
         note[name].add_argument('path')
@@ -80,6 +102,7 @@ def parser():
     project['create'].add_argument('--category', required=True)
     project['create'].add_argument('--name', required=True)
     project['create'].add_argument('--id', required=True)
+    project['create'].add_argument('--dry-run', action='store_true')
     project['get'].add_argument('id', nargs='?')
     project['status'].add_argument('status')
     project['status'].add_argument('--if-hash', required=True)
@@ -106,9 +129,10 @@ def parser():
     for name in ('add', 'set'):
         template[name].add_argument('--body-file', required=True)
     template['set'].add_argument('--if-hash', required=True)
-    agents = group('agents', ['show', 'render', 'apply', 'customize', 'template-get', 'template-set'])
+    agents = group('agents', ['show', 'render', 'diff', 'apply', 'sync', 'customize', 'template-get', 'template-set'])
     agents['show'].add_argument('--local', action='store_true')
     agents['apply'].add_argument('--if-hash')
+    agents['sync'].add_argument('--if-hash')
     agents['customize'].add_argument('--body-file', required=True)
     agents['customize'].add_argument('--if-hash')
     for name in ('template-get', 'template-set'):
@@ -119,7 +143,10 @@ def parser():
     shared['get'].add_argument('path')
     shared['find'].add_argument('query')
     group('sync', ['show', 'rebuild', 'apply'])
-    bp = group('blueprint', ['show', 'validate', 'set-file'])
+    bp = group('blueprint', ['show', 'list', 'generate', 'validate', 'set-file'])
+    bp['generate'].add_argument('--kind', required=True, choices=['main', 'project'])
+    bp['generate'].add_argument('--output', required=True)
+    bp['generate'].add_argument('--dry-run', action='store_true')
     bp['set-file'].add_argument('path')
     bp['set-file'].add_argument('--body-file', required=True)
     bp['set-file'].add_argument('--if-hash', required=True)
@@ -144,6 +171,15 @@ def dispatch(args, context):
         return result
     if g == 'check':
         return service.scoped_check()
+    if g == 'vault':
+        if a == 'list':
+            return maintenance.vault_list(context)
+        if a == 'register':
+            return maintenance.register(context, args.path, args.dry_run)
+        return maintenance.vault_get(maintenance.target_context(context, args.path))
+    if g in ('doctor', 'repair'):
+        selected = maintenance.target_context(context, args.path)
+        return maintenance.doctor(selected) if g == 'doctor' else maintenance.repair(selected, args.apply, args.if_plan_hash)
     if g == 'note':
         if a == 'get':
             return service.note_get(args.path)
@@ -182,6 +218,10 @@ def dispatch(args, context):
         if a == 'list':
             return service.project_list()
         if a == 'create':
+            if args.dry_run:
+                context.require_main()
+                target = context.root / '科研项目' / args.category / args.name
+                return bootstrap.project_plan(context.root, target, args.id)
             return service.project_create(args.category, args.name, args.id)
         if a == 'status':
             return service.project_status(args.status, args.if_hash)
@@ -219,7 +259,9 @@ def dispatch(args, context):
             return {'path': str(path), 'hash': digest(path), 'content': path.read_text(encoding='utf-8-sig') if path.exists() else ''}
         if a == 'render':
             return service.agents_render()
-        if a == 'apply':
+        if a == 'diff':
+            return maintenance.agents_diff(service)
+        if a in ('apply', 'sync'):
             return service.agents_apply(args.if_hash)
         if a == 'customize':
             return service.agents_customize(input_text(args.body_file), args.if_hash)
@@ -269,12 +311,25 @@ def dispatch(args, context):
     raise VaultError('未实现命令')
 
 def is_mutation(args):
-    return getattr(args, 'action', '') in {'add', 'edit', 'delete', 'create', 'status', 'restore', 'undo', 'set', 'apply', 'customize', 'template-set', 'set-file', 'rebuild'}
+    if getattr(args, 'dry_run', False):
+        return False
+    return getattr(args, 'action', '') in {'add', 'edit', 'delete', 'create', 'status', 'restore', 'undo', 'set', 'apply', 'sync', 'customize', 'template-set', 'set-file', 'rebuild'}
 
 def run(argv=None, cwd=None):
     args = parser().parse_args(argv)
     if args.group == 'version':
         return updater.version_info()
+    if args.group == 'init':
+        return bootstrap.initialize(args.path, args.kind, args.parent, args.id, args.from_vault, args.include, args.plugin, args.dry_run, cwd, args.vault)
+    if args.group == 'profile':
+        bootstrap.permission(cwd, args.vault)
+        return profiles.inspect(args.path)
+    if args.group == 'blueprint' and args.action in ('generate', 'list'):
+        if args.action == 'generate':
+            return bootstrap.generate_blueprint(args.kind, args.output, args.dry_run, cwd, args.vault)
+        detected = main_vault(Path(cwd or Path.cwd()))
+        context = Context.resolve(cwd, args.vault, args.project) if detected or args.vault else None
+        return bootstrap.blueprint_list(context)
     if args.group == 'update':
         if args.action == 'check':
             return updater.check_update(args.repo, args.tag)
@@ -283,7 +338,12 @@ def run(argv=None, cwd=None):
         if main_vault(Path(cwd or Path.cwd())) or args.vault:
             Context.resolve(cwd, args.vault, args.project).require_main()
         return updater.apply_update(args.repo, args.tag, args.force)
-    context = Context.resolve(cwd, args.vault, args.project)
+    hint = args.vault
+    if not hint and not main_vault(Path(cwd or Path.cwd())) and args.group in ('doctor', 'repair', 'vault'):
+        hint = getattr(args, 'path', None)
+    context = Context.resolve(cwd, hint, args.project)
+    if args.group in ('doctor', 'repair') or (args.group == 'vault' and args.action == 'register'):
+        return dispatch(args, context)
     if is_mutation(args):
         with locked(context.root):
             return dispatch(args, context)

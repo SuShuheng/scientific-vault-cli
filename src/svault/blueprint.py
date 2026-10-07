@@ -8,6 +8,8 @@ import re
 import shutil
 import tempfile
 import yaml
+from .identity import main_name, main_identity
+from . import __version__
 
 TEMPLATE = Path('规则与模板/项目文件夹模板/标准科研项目')
 SYNC_LIST = Path('规则与模板/子库同步目录.json')
@@ -48,7 +50,7 @@ def discover_vaults(root):
     projects = root / '科研项目'
     if not projects.exists():
         return []
-    return sorted(p.parent for p in projects.rglob('.obsidian') if p.is_dir())
+    return sorted(p.parent for p in projects.rglob('.obsidian') if p.is_dir() and not any(x.startswith('.project-staging-') for x in p.parts))
 
 def sync_patterns(root):
     return [{'pattern': (p.relative_to(root) / '.obsidian').as_posix(), 'caseSensitive': True} for p in discover_vaults(root)]
@@ -121,14 +123,15 @@ def create_project(root, category, name, project_id, configure, example=False):
     if not ID_RE.fullmatch(project_id):
         raise ValueError('项目编号须以英文字母开头，仅含字母、数字、下划线或连字符，最长 64 字符')
     safe_name(name)
-    if name.casefold() == 'scientific_notes':
-        raise ValueError('scientific_notes 是主库注册名，不能用作子库名称')
-    category_path = relative_path(category.replace('\\', '/'))
+    if name.casefold() == main_name(root).casefold():
+        raise ValueError('主库注册名不能用作子库名称')
+    category_path = Path() if category in ('', '.') else relative_path(category.replace('\\', '/'))
     project_root = root / '科研项目'
     target = project_root / category_path / name
     if not target.resolve().is_relative_to(project_root.resolve()):
         raise ValueError('项目目标越出科研项目范围')
-    if target.exists():
+    empty_existing = target.exists() and target.is_dir() and not any(target.iterdir())
+    if target.exists() and not empty_existing:
         raise ValueError('项目目录已存在，拒绝覆盖')
     for ancestor in target.parents:
         if ancestor == root:
@@ -145,10 +148,8 @@ def create_project(root, category, name, project_id, configure, example=False):
             raise ValueError('项目编号已使用')
     manifest, directories, sources, notes = validate_blueprint(root)
     sync_path = root / '.obsidian/plugins/fast-note-sync/data.json'
-    settings = load(sync_path)
-    if not isinstance(settings, dict):
-        raise ValueError('主库同步配置不存在，无法登记子库配置目录')
-    uri = lambda file, vault='scientific_notes': 'obsidian://open?' + urlencode({'vault': vault, 'file': file})
+    settings = load(sync_path, {})
+    uri = lambda file, vault=None: 'obsidian://open?' + urlencode({'vault': vault or main_name(root), 'file': file})
     created = datetime.now(timezone(timedelta(hours=8))).date().isoformat()
     values = {
         'PROJECT_ID': project_id, 'PROJECT_NAME': name, 'PROJECT_NAME_YAML': json.dumps(name, ensure_ascii=False),
@@ -176,22 +177,27 @@ def create_project(root, category, name, project_id, configure, example=False):
             if p.name == '共享知识.md':
                 continue
             (note_dest / p.name).write_text(p.read_text(encoding='utf-8-sig').replace('PROJECT_ID', project_id), encoding='utf-8')
-        atomic_json(stage / '项目.json', {'schema_version': 1, 'project_id': project_id, 'vault_name': name, 'category': category_path.as_posix(), 'created': created, 'template': manifest['name'], 'template_version': manifest['schema_version']})
+        atomic_json(stage / '项目.json', {'schema_version': 1, 'project_id': project_id, 'vault_name': name, 'category': category_path.as_posix(), 'created': created, 'template': manifest['name'], 'template_version': manifest['schema_version'], 'layout_version': __version__, 'parent_vault_id': main_identity(root)['vault_id']})
         configure(stage, project_id)
         if not (stage / 'AGENTS.md').exists() or not (stage / f'{project_id}-项目主页.md').exists():
             raise ValueError('模板未生成项目规则或主页')
         # On Windows rename refuses an existing destination; the final directory is never used as scratch space.
         if target.exists():
-            raise ValueError('项目目录已被其他操作创建，拒绝覆盖')
+            if not empty_existing or any(target.iterdir()):
+                raise ValueError('项目目录已被其他操作创建，拒绝覆盖')
+            target.rmdir()
         stage.rename(target)
         published = True
         atomic_json(root / SYNC_LIST, {'schema_version': 1, 'directories': sync_patterns(root)})
-        try:
-            apply_sync_dirs(root)
-        except Exception as exc:
-            raise RuntimeError(f'项目已完整创建，但本机同步清单应用失败；保留项目，请运行 apply_sync_dirs.py：{exc}') from exc
+        if settings.get('syncEnabled') and settings.get('configSyncEnabled'):
+            try:
+                apply_sync_dirs(root)
+            except Exception as exc:
+                raise RuntimeError(f'项目已完整创建，但本机同步清单应用失败；保留项目，请运行 sync apply：{exc}') from exc
         return target
     finally:
         if not published and stage.exists():
             assert stage.resolve().is_relative_to(project_root.resolve()) and stage.name.startswith('.project-staging-')
             shutil.rmtree(stage)
+        if not published and empty_existing and not target.exists():
+            target.mkdir()

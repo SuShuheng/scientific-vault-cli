@@ -124,9 +124,18 @@ class VaultTests(unittest.TestCase):
         try:
             link.symlink_to(outside, target_is_directory=True)
         except OSError:
-            self.skipTest('当前系统不允许创建符号链接')
+            if os.name != 'nt':
+                raise
+            script = self.base / 'create-junction.ps1'
+            script.write_text('param([string]$Link,[string]$Target)\nNew-Item -ItemType Junction -Path $Link -Value $Target -ErrorAction Stop | Out-Null\n', encoding='utf-8-sig')
+            proc = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', str(script), '-Link', str(link), '-Target', str(outside)], capture_output=True, timeout=15)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
         with self.assertRaises(VaultError):
             self.sub.ctx.path('联接/逃逸.md', mutate=True)
+        if os.environ.get('SVAULT_EXE'):
+            proc = subprocess.run([os.environ['SVAULT_EXE'], 'note', 'add', '联接/P001-逃逸.md', '--text', '不应写入'], cwd=self.child, capture_output=True, encoding='utf-8')
+            self.assertEqual(proc.returncode, 1)
+            self.assertEqual(json.loads(proc.stderr)['error']['code'], 'permission_denied')
 
     def test_project_delete_restore_and_sync_registration(self):
         self.add_note()

@@ -1,4 +1,7 @@
 OPERATIONS = [
+    ('版本查询', 'version / --version', '任意目录', '报告产品与 1.0.0 版本，无需找到 Vault'),
+    ('Release 升级查询', 'update check / update status', '主库与子库或任意目录', '访问公开 GitHub Release 或查询本机替换结果'),
+    ('覆盖式升级 exe', 'update apply', '主库或库外独立安装', '校验 SHA256 和产品版本，退出后替换，旧版可恢复；子库禁止执行'),
     ('身份与权限', 'whoami / permissions / operations', '主库与子库', '自动识别当前工作目录与项目边界'),
     ('笔记新增', 'note add', '主库与子库', '按模板生成属性；子库仅本项目'),
     ('笔记删除', 'note delete', '主库与子库', '移入对应库 .trash；原件只读'),

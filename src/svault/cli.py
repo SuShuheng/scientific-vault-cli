@@ -5,10 +5,11 @@ import json
 import sys
 import yaml
 from . import __version__, blueprint
-from .context import Context, VaultError, parts
+from .context import Context, VaultError, parts, main_vault
 from .storage import locked, digest
 from .service import Service, render_core
 from .capabilities import operations
+from . import updater
 
 READ_ONLY = {'whoami', 'permissions', 'operations', 'rules', 'check'}
 
@@ -36,7 +37,7 @@ def parser():
     p.add_argument('--json', action='store_true', help='保留结构化 JSON 输出（默认即为 JSON）')
     p.add_argument('--version', action='version', version='svault ' + __version__)
     commands = p.add_subparsers(dest='group', required=True)
-    for name in ('whoami', 'permissions', 'operations', 'rules', 'check'):
+    for name in ('whoami', 'permissions', 'operations', 'rules', 'check', 'version'):
         commands.add_parser(name)
     def group(name, names):
         subs = commands.add_parser(name).add_subparsers(dest='action', required=True)
@@ -122,6 +123,11 @@ def parser():
     bp['set-file'].add_argument('path')
     bp['set-file'].add_argument('--body-file', required=True)
     bp['set-file'].add_argument('--if-hash', required=True)
+    update = group('update', ['check', 'apply', 'status'])
+    for name in ('check', 'apply'):
+        update[name].add_argument('--repo', default=updater.REPOSITORY)
+        update[name].add_argument('--tag')
+    update['apply'].add_argument('--force', action='store_true', help='允许重新安装当前同版本，不允许降级')
     return p
 
 def dispatch(args, context):
@@ -267,6 +273,16 @@ def is_mutation(args):
 
 def run(argv=None, cwd=None):
     args = parser().parse_args(argv)
+    if args.group == 'version':
+        return updater.version_info()
+    if args.group == 'update':
+        if args.action == 'check':
+            return updater.check_update(args.repo, args.tag)
+        if args.action == 'status':
+            return updater.update_status()
+        if main_vault(Path(cwd or Path.cwd())) or args.vault:
+            Context.resolve(cwd, args.vault, args.project).require_main()
+        return updater.apply_update(args.repo, args.tag, args.force)
     context = Context.resolve(cwd, args.vault, args.project)
     if is_mutation(args):
         with locked(context.root):

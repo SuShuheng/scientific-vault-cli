@@ -1,4 +1,6 @@
-# scientific-vault-cli / svault
+# scientific-vault-cli / svault 1.0.0
+
+[GitHub](https://github.com/SuShuheng/scientific-vault-cli) · [Releases](https://github.com/SuShuheng/scientific-vault-cli/releases)
 
 面向主 Vault 与叶级项目 Vault 的科研笔记管理 CLI。提供作用域校验、可恢复删除、文件旧版本、模板和 Agent 规则生成、项目结构维护及审计记录。工具不调用 AI，不运行训练，不连接外部实验仓库。
 
@@ -23,7 +25,7 @@ Windows 原生版本为 `dist/svault.exe`，不需要另装 Python。安装到�
 
 多层分类下相对主库的层数可能不同，应使用子库 AGENTS 中给出的主库相对路径。主库 Agent 用全局参数 `--project P001` 选择子库；子库 Agent 不能借此选其他项目。全局参数放子命令之前。
 
-源码运行适用于 Windows/macOS/Linux，有 Python 与 PyYAML 的环境可执行 `python run_svault.py ...`，或安装包后直接运行 `svault`。库内还附有 `工具/svault.py` 和运行时包，作为 Python 入口。
+源码运行适用于 Windows/macOS/Linux，有 Python 与 PyYAML 的环境可在本独立仓库执行 `python run_svault.py ...`，或安装包后直接运行 `svault`。Vault 内只部署 exe，不保存 Python 脚本、测试或源码运行时。
 
 ```text
 python -m pip install .
@@ -31,6 +33,21 @@ svault --version
 ```
 
 当前只验证 Windows；此版本没有声称已构建 macOS/Linux 原生二进制。
+
+## 版本与覆盖式升级
+
+```text
+svault version
+svault --version
+svault update check
+svault update apply
+svault update status
+```
+
+version/--version 无需找到 Vault。update check 默认查询本仓库最新稳定 Release；可用 --tag v1.0.0 指定版本。
+update apply 校验 Release exe 大小、SHA256、产品与版本，再启动隐藏辅助进程；命令退出后覆盖当前 exe。升级保留旧版备份，失败恢复旧版，完成状态通过 update status 查询。
+同版本默认不覆盖，可使用 `update apply --force` 重新安装；不允许降级。源码模式只支持版本/查询，不能替换 exe。子库 Agent 不能执行 update apply；库外的独立 exe 可以更新自身。
+升级下载不读取或传递 GitHub 登录密钥，公开 Release 可以匿名下载。
 
 ## 操作与权限
 
@@ -99,7 +116,7 @@ svault sync apply
 
 ```text
 python -m unittest discover -s tests -v
-python -m PyInstaller --onefile --name svault --paths src run_svault.py
+python -m PyInstaller --onefile --name svault --version-file version_info.txt --paths src run_svault.py
 ```
 
 源码、测试及构建文件归独立仓库管理；笔记库中的运行时副本是安装产物。发布前验证 Windows 可执行文件的权限拒绝与 JSON 输出。输出默认 UTF-8 JSON，成功 exit=0，操作错误 exit=1，检查发现问题 exit=2。

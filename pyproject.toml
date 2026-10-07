@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scientific-vault-cli"
-version = "0.1.0"
+version = "1.0.0"
 description = "Scoped, recoverable maintenance for nested Obsidian research vaults"
 requires-python = ">=3.10"
 dependencies = ["PyYAML>=6,<7"]

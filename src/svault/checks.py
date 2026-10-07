@@ -108,7 +108,7 @@ def check(root):
                             errors.append('记录缺少属性 ' + prop + ': ' + str(p.relative_to(root)))
                     if scope in metadata_by_vault and data.get('project_id') != metadata_by_vault[scope]:
                         errors.append('记录项目编号不匹配: ' + str(p.relative_to(root)))
-                    if 'PROJECT_ID' in str(data) or '{{' in str(data):
+                    if data.get('type') != 'maintenance' and ('PROJECT_ID' in str(data) or '{{' in str(data)):
                         errors.append('正式记录仍有模板占位符: ' + str(p.relative_to(root)))
             except (yaml.YAMLError, ValueError, IndexError):
                 errors.append('笔记属性无效: ' + str(p.relative_to(root)))
